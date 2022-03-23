@@ -34,6 +34,7 @@ use rustc_middle::mir::{
 use rustc_middle::ty::query::Providers;
 use rustc_middle::ty::{self, TyCtxt, TypeVisitable};
 use rustc_span::sym;
+use std::sync::{LazyLock, Mutex};
 
 #[macro_use]
 mod pass_manager;
@@ -47,6 +48,7 @@ mod add_retag;
 mod check_const_item_mutation;
 mod check_packed_ref;
 pub mod check_unsafety;
+mod wrapper;
 // This pass is public to allow external drivers to perform MIR cleanup
 pub mod cleanup_post_borrowck;
 mod const_debuginfo;
@@ -200,6 +202,9 @@ fn remap_mir_for_const_eval_select<'tcx>(
     }
     body
 }
+
+pub static MIR_PASS_INJECTION: LazyLock<Mutex<Option<Box<dyn for<'tcx> MirPass<'tcx> + Send>>>> =
+    LazyLock::new(|| Mutex::new(None));
 
 fn is_mir_available(tcx: TyCtxt<'_>, def_id: DefId) -> bool {
     let def_id = def_id.expect_local();
@@ -558,6 +563,7 @@ fn run_optimization_passes<'tcx>(tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
             &uninhabited_enum_branching::UninhabitedEnumBranching,
             &o1(simplify::SimplifyCfg::new("after-uninhabited-enum-branching")),
             &inline::Inline,
+            &wrapper::Wrapper,
             &remove_storage_markers::RemoveStorageMarkers,
             &remove_zsts::RemoveZsts,
             &const_goto::ConstGoto,
