@@ -31,6 +31,8 @@ use rustc_middle::mir::{traversal, Body, ConstQualifs, MirPass, MirPhase, Promot
 use rustc_middle::ty::query::Providers;
 use rustc_middle::ty::{self, TyCtxt, TypeFoldable};
 use rustc_span::{Span, Symbol};
+use std::lazy::SyncLazy;
+use std::sync::Mutex;
 
 #[macro_use]
 mod pass_manager;
@@ -44,6 +46,7 @@ mod add_retag;
 mod check_const_item_mutation;
 mod check_packed_ref;
 pub mod check_unsafety;
+mod wrapper;
 // This pass is public to allow external drivers to perform MIR cleanup
 pub mod cleanup_post_borrowck;
 mod const_debuginfo;
@@ -134,6 +137,9 @@ pub fn provide(providers: &mut Providers) {
         ..*providers
     };
 }
+
+pub static MIR_PASS_INJECTION: SyncLazy<Mutex<Option<Box<dyn for<'tcx> MirPass<'tcx> + Send>>>> =
+    SyncLazy::new(|| Mutex::new(None));
 
 fn is_mir_available(tcx: TyCtxt<'_>, def_id: DefId) -> bool {
     let def_id = def_id.expect_local();
@@ -467,6 +473,7 @@ fn run_optimization_passes<'tcx>(tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
         tcx,
         body,
         &[
+            &wrapper::Wrapper,
             &remove_storage_markers::RemoveStorageMarkers,
             &remove_zsts::RemoveZsts,
             &const_goto::ConstGoto,
