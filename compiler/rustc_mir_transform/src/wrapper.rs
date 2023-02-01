@@ -7,7 +7,7 @@ pub struct Wrapper;
 
 impl<'tcx> MirPass<'tcx> for Wrapper {
     fn name(&self) -> Cow<'_, str> {
-        match &*MIR_PASS_INJECTION.lock().unwrap() {
+        match MIR_PASS_INJECTION.read().unwrap().as_ref() {
             Some(pass) => Cow::Owned(pass.name().into_owned()),
             None => Cow::from("WrapperEmpty"),
         }
@@ -15,7 +15,7 @@ impl<'tcx> MirPass<'tcx> for Wrapper {
 
     fn is_enabled(&self, sess: &rustc_session::Session) -> bool {
         MIR_PASS_INJECTION
-            .lock()
+            .read()
             .unwrap()
             .as_ref()
             .map(|pass| pass.is_enabled(sess))
@@ -23,18 +23,18 @@ impl<'tcx> MirPass<'tcx> for Wrapper {
     }
 
     fn run_pass(&self, tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
-        if let Some(pass) = &*MIR_PASS_INJECTION.lock().unwrap() {
+        if let Some(pass) = MIR_PASS_INJECTION.read().unwrap().as_ref() {
             pass.run_pass(tcx, body);
         }
     }
 
     fn phase_change(&self) -> Option<MirPhase> {
-        MIR_PASS_INJECTION.lock().unwrap().as_ref().and_then(|pass| pass.phase_change())
+        MIR_PASS_INJECTION.read().unwrap().as_ref().and_then(|pass| pass.phase_change())
     }
 
     fn is_mir_dump_enabled(&self) -> bool {
         MIR_PASS_INJECTION
-            .lock()
+            .read()
             .unwrap()
             .as_ref()
             .map(|pass| pass.is_mir_dump_enabled())

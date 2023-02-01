@@ -34,7 +34,7 @@ use rustc_middle::mir::{
 use rustc_middle::ty::query::Providers;
 use rustc_middle::ty::{self, TyCtxt, TypeVisitable};
 use rustc_span::sym;
-use std::sync::{LazyLock, Mutex};
+use std::sync::{LazyLock, RwLock};
 
 #[macro_use]
 mod pass_manager;
@@ -203,8 +203,9 @@ fn remap_mir_for_const_eval_select<'tcx>(
     body
 }
 
-pub static MIR_PASS_INJECTION: LazyLock<Mutex<Option<Box<dyn for<'tcx> MirPass<'tcx> + Send>>>> =
-    LazyLock::new(|| Mutex::new(None));
+pub static MIR_PASS_INJECTION: LazyLock<
+    RwLock<Option<Box<dyn for<'tcx> MirPass<'tcx> + Send + Sync>>>,
+> = LazyLock::new(|| RwLock::new(None));
 
 fn is_mir_available(tcx: TyCtxt<'_>, def_id: DefId) -> bool {
     let def_id = def_id.expect_local();
