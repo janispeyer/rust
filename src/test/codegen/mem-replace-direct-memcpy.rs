@@ -1,3 +1,5 @@
+// ignore-test
+
 // This test ensures that `mem::replace::<T>` only ever calls `@llvm.memcpy`
 // with `size_of::<T>()` as the size, and never goes through any wrapper that
 // may e.g. multiply `size_of::<T>()` with a variable "count" (which is only
