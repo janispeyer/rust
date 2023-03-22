@@ -45,10 +45,11 @@ mod abort_unwinding_calls;
 mod add_call_guards;
 mod add_moves_for_packed_drops;
 mod add_retag;
+mod alias;
 mod check_const_item_mutation;
 mod check_packed_ref;
 pub mod check_unsafety;
-mod wrapper;
+// mod wrapper;
 // This pass is public to allow external drivers to perform MIR cleanup
 pub mod cleanup_post_borrowck;
 mod const_debuginfo;
@@ -564,7 +565,9 @@ fn run_optimization_passes<'tcx>(tcx: TyCtxt<'tcx>, body: &mut Body<'tcx>) {
             &uninhabited_enum_branching::UninhabitedEnumBranching,
             &o1(simplify::SimplifyCfg::new("after-uninhabited-enum-branching")),
             &inline::Inline,
-            &wrapper::Wrapper,
+            // For evaluation use the hard coded pass instead of the injected wrapper.
+            // &wrapper::Wrapper,
+            &alias::Alias,
             &remove_storage_markers::RemoveStorageMarkers,
             &remove_zsts::RemoveZsts,
             &const_goto::ConstGoto,
