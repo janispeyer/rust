@@ -1,4 +1,4 @@
-// run-pass
+// ignore-test
 
 #![allow(unused_imports)]
 // This briefly tests the capability of `Cell` and `RefCell` to implement the

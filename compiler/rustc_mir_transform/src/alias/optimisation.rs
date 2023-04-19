@@ -89,21 +89,28 @@ impl<'tcx, 'a> EliminateReadsOptimisation<'tcx, 'a> {
 
         if !rvalue_used {
             self.body.local_decls.pop();
-        } else {
-            // Swap assignment of kind `(*x) = rvalue` with `internal = rvalue`.
-            // This is only done when we replaced reads of `*x` with `internal` where apropriate.
-            let basic_blocks = self.body.basic_blocks.as_mut();
-            let mut statement =
-                &mut basic_blocks[location.block].statements[location.statement_index];
-            let mut original_statement = statement.replace_nop();
-            let StatementKind::Assign(mut assignment) = original_statement.kind else {
-                unreachable!()
-            };
+        } /* else {
+        // Swap assignment of kind `(*x) = rvalue` with `internal = rvalue`.
+        // This is only done when we replaced reads of `*x` with `internal` where apropriate.
+        let basic_blocks = self.body.basic_blocks.as_mut();
+        let mut statement =
+        &mut basic_blocks[location.block].statements[location.statement_index];
+        let mut original_statement = statement.replace_nop();
+        let StatementKind::Assign(mut assignment) = original_statement.kind else {
+        unreachable!()
+        };
 
-            let rvalue = std::mem::replace(&mut assignment.1, internal_rvalue.clone());
-            statement.kind = StatementKind::Assign(Box::new((internal_place, rvalue)));
-            original_statement.kind = StatementKind::Assign(assignment);
-            self.assignments.push((location, original_statement));
-        }
+        // *x = <some-expr>;
+        // ==>
+        // let tmp = <some-expr>;
+        // *x = tmp;
+        //
+        // let tmp = 0;
+        // *x = <some-expr>;
+        let rvalue = std::mem::replace(&mut assignment.1, internal_rvalue.clone());
+        statement.kind = StatementKind::Assign(Box::new((internal_place, rvalue)));
+        original_statement.kind = StatementKind::Assign(assignment);
+        self.assignments.push((location, original_statement));
+        } */
     }
 }
